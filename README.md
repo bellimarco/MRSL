@@ -177,7 +177,7 @@ Scene class, manages all the drawing and camera work for a specific WebGL contex
     constructor(cnv)
 * saves cnv attribute and gets WebGL context, sets plain background color and enables DEPTH_TEST
 * create camera object related to the scene with default starting parameters
-* setup mmouse events on the canvas (to manage presses and drags, as well as propagating these events to the camera object for camera control)
+* setup events on the html canvas (propagating keyboard presses and mouse events to the camera object for camera control)
 
 <br/>
 
