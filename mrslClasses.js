@@ -235,16 +235,17 @@ class mrslCamera{
         this.updateMatrix();
     }
 
-    //translation on normal plane to mouse coords difference ration
-    traslatePlaneToMouse = 0.002;
-    traslateMagnitude = 1.0;        //ulterior mutiplier to traslated distance, given by distance to the target
-    //live traslated position
+
+    traslateMagnitude = 1.0;        //mutiplier to traslated distance, given by distance to the target
+    //translation starting and ending separately, where dx,dy represent current absolute traslation on the plane
     traslPos = vec3.create();
     traslateStart(){
-        this.traslateMagnitude = vec3.length(this.look) * this.traslatePlaneToMouse;
+        this.traslateMagnitude = vec3.length(this.look);
+        //save starting values, in case traslate is not going to be called
+        vec3.copy(this.traslPos,this.position);
     }
     traslate(dx,dy){
-        vec3.scaleAndAdd(this.traslPos, this.position, this.right, -dx * this.traslateMagnitude);
+        vec3.scaleAndAdd(this.traslPos, this.position, this.right, dx * this.traslateMagnitude);
         vec3.scaleAndAdd(this.traslPos, this.traslPos, this.up, dy * this.traslateMagnitude);
         let target = vec3.add(vec3.create(), this.traslPos, this.look);
         mat4.lookAt(this.viewMat, this.traslPos, target, this.up);
@@ -253,20 +254,34 @@ class mrslCamera{
     traslateEnd(){
         vec3.copy(this.position,this.traslPos);
     }
+    //translation executed in steps
+    traslateStep(dx,dy){
+        this.traslateMagnitude = vec3.length(this.look);
+        vec3.scaleAndAdd(this.traslPos, this.position, this.right, dx * this.traslateMagnitude);
+        vec3.scaleAndAdd(this.traslPos, this.traslPos, this.up, dy * this.traslateMagnitude);
+        let target = vec3.add(vec3.create(), this.traslPos, this.look);
+        mat4.lookAt(this.viewMat, this.traslPos, target, this.up);
+        this.updateMatrix();
+        vec3.copy(this.position,this.traslPos);
+    }
 
-    //rotation
-    rotateRadToMouse = 0.005;
-    //live rotated vectors
+    //rotation starting and ending separately, where dx,dy represent current absolute traslation around z and horizontal axes
     rotPos = vec3.create();
     rotLook = vec3.create(); rotUp = vec3.create(); rotRight = vec3.create();
     rotMat1 = mat4.create(); rotMat2 = mat4.create();
-    rotateStart(){}
+    rotateStart(){
+        //save starting values, in case rotate is not going to be called
+        vec3.copy(this.rotPos,this.position);
+        vec3.copy(this.rotLook,this.look);
+        vec3.copy(this.rotUp,this.up);
+        vec3.copy(this.rotRight,this.right);
+    }
     rotate(dx,dy){
-        mat4.fromRotation(this.rotMat1, -dx*this.rotateRadToMouse, [0,0,1]);    //rotation around z
+        mat4.fromRotation(this.rotMat1, dx, [0,0,1]);    //rotation around z
         vec3.transformMat4(this.rotLook,this.look,this.rotMat1);
         vec3.transformMat4(this.rotUp,this.up,this.rotMat1);
         vec3.transformMat4(this.rotRight,this.right,this.rotMat1);
-        mat4.fromRotation(this.rotMat2, -dy*this.rotateRadToMouse, this.rotRight);
+        mat4.fromRotation(this.rotMat2, dy, this.rotRight);  //rotation around horizontal
         vec3.transformMat4(this.rotLook,this.rotLook,this.rotMat2);
         vec3.transformMat4(this.rotUp,this.rotUp,this.rotMat2);
         vec3.transformMat4(this.rotRight,this.rotRight,this.rotMat2);
@@ -286,8 +301,8 @@ class mrslCamera{
     //zoom
     zoomMagToMouse = 0.01;
     zoom(z){
-        if(z>35) z=35;
-        if(z<-35) z=-35;
+        if(z>30) z=30;
+        if(z<-30) z=-30;
         let target = vec3.add(vec3.create(),this.position,this.look);
         vec3.scaleAndAdd(this.look, this.look, this.look, z*this.zoomMagToMouse);
         vec3.subtract(this.position, target, this.look);
@@ -339,7 +354,7 @@ class mrslScene{
         
         this.camera = new mrslCamera(1.0, cnv.width/cnv.height, 0.1, 1000.0);
 
-        this.setupMouseEvents();
+        this.setupEvents();
 
         if (!gl) {
             alert('Your browser does not support WebGL');
@@ -378,12 +393,21 @@ class mrslScene{
     }
 
 
+    //conversions from canvas/page values to 3d scene values
+    camera_PXLS_TRASLPLANE = 0.002;   //mouse pixel difference to translation units on the normal plane
+    camera_PXLS_SPHEREROT = 0.005;   //mouse pixel difference to angle of rotation of spherical coordinates in radians
+
     //mouse press events
+    canvasMouseFocused = false; //for keyboard inputs, if last click event was on the canvas
     mousePress = false;     //started a mouse press
     mouseBtn = 0;          //0: left click, 1: middle
     mouseX0 = 0; mouseY0 = 0;
     mouseDX = 0; mouseDY = 0;
-    setupMouseEvents(){
+    setupEvents(){
+        //canvas focus event
+        document.addEventListener('click', (e)=> this.canvasMouseFocused = (e.target==this.cnv) );
+
+        //mouse events
         this.cnv.addEventListener('mousedown', (e)=>{
             this.mouseBtn = e.button;
             this.mousePress = true;
@@ -396,8 +420,8 @@ class mrslScene{
             if(this.mousePress){
                 this.mouseDX = e.pageX-this.mouseX0;
                 this.mouseDY = e.pageY-this.mouseY0;
-                if(this.mouseBtn==0) this.camera.rotate(this.mouseDX,this.mouseDY);
-                else if(this.mouseBtn==1) this.camera.traslate(this.mouseDX,this.mouseDY);
+                if(this.mouseBtn==0) this.camera.rotate(-this.mouseDX*this.camera_PXLS_SPHEREROT,-this.mouseDY*this.camera_PXLS_SPHEREROT);
+                else if(this.mouseBtn==1) this.camera.traslate(-this.mouseDX*this.camera_PXLS_TRASLPLANE,this.mouseDY*this.camera_PXLS_TRASLPLANE);
 
             }
         })
@@ -406,9 +430,21 @@ class mrslScene{
             else if(this.mouseBtn==1) this.camera.traslateEnd();
             this.mousePress = false;
         });
+        
         this.cnv.addEventListener('wheel', (e)=>{
             e.preventDefault();
             this.camera.zoom(e.deltaY);
+        });
+        
+
+        //keyboard events
+        document.addEventListener('keydown', (e)=>{
+            if(this.canvasMouseFocused) {
+                if(e.key == "w")      this.camera.traslateStep(0,this.camera_PXLS_TRASLPLANE*10);
+                else if(e.key == "s") this.camera.traslateStep(0,-this.camera_PXLS_TRASLPLANE*10); 
+                else if(e.key == "a") this.camera.traslateStep(-this.camera_PXLS_TRASLPLANE*10,0); 
+                else if(e.key == "d") this.camera.traslateStep(this.camera_PXLS_TRASLPLANE*10,0);
+            }
         });
     }
 }
