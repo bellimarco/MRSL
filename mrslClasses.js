@@ -244,9 +244,10 @@ class mrslCamera{
         //save starting values, in case traslate is not going to be called
         vec3.copy(this.traslPos,this.position);
     }
-    traslate(dx,dy){
+    traslate(dx,dy,dz){
         vec3.scaleAndAdd(this.traslPos, this.position, this.right, dx * this.traslateMagnitude);
         vec3.scaleAndAdd(this.traslPos, this.traslPos, this.up, dy * this.traslateMagnitude);
+        vec3.scaleAndAdd(this.traslPos, this.traslPos, this.look, dz);
         let target = vec3.add(vec3.create(), this.traslPos, this.look);
         mat4.lookAt(this.viewMat, this.traslPos, target, this.up);
         this.updateMatrix();
@@ -255,10 +256,11 @@ class mrslCamera{
         vec3.copy(this.position,this.traslPos);
     }
     //translation executed in steps
-    traslateStep(dx,dy){
+    traslateStep(dx,dy,dz){
         this.traslateMagnitude = vec3.length(this.look);
         vec3.scaleAndAdd(this.traslPos, this.position, this.right, dx * this.traslateMagnitude);
         vec3.scaleAndAdd(this.traslPos, this.traslPos, this.up, dy * this.traslateMagnitude);
+        vec3.scaleAndAdd(this.traslPos, this.traslPos, this.look, dz);
         let target = vec3.add(vec3.create(), this.traslPos, this.look);
         mat4.lookAt(this.viewMat, this.traslPos, target, this.up);
         this.updateMatrix();
@@ -393,6 +395,7 @@ class mrslScene{
     }
 
 
+    camera_KEYTRASLATE_FIREPERIOD = 40; //in milliseconds, period of camera traslateStep calls firing during a key press
     //conversions from canvas/page values to 3d scene values
     camera_PXLS_TRASLPLANE = 0.002;   //mouse pixel difference to translation units on the normal plane
     camera_PXLS_SPHEREROT = 0.005;   //mouse pixel difference to angle of rotation of spherical coordinates in radians
@@ -403,6 +406,9 @@ class mrslScene{
     mouseBtn = 0;          //0: left click, 1: middle
     mouseX0 = 0; mouseY0 = 0;
     mouseDX = 0; mouseDY = 0;
+    //key press events
+    keysPressed = {w: false, s: false, a: false, d: false, q: false, e: false};
+    keysTimeintervals = {forward: null, sideways: null, vertical: null};
     setupEvents(){
         //canvas focus event
         document.addEventListener('click', (e)=> this.canvasMouseFocused = (e.target==this.cnv) );
@@ -421,7 +427,7 @@ class mrslScene{
                 this.mouseDX = e.pageX-this.mouseX0;
                 this.mouseDY = e.pageY-this.mouseY0;
                 if(this.mouseBtn==0) this.camera.rotate(-this.mouseDX*this.camera_PXLS_SPHEREROT,-this.mouseDY*this.camera_PXLS_SPHEREROT);
-                else if(this.mouseBtn==1) this.camera.traslate(-this.mouseDX*this.camera_PXLS_TRASLPLANE,this.mouseDY*this.camera_PXLS_TRASLPLANE);
+                else if(this.mouseBtn==1) this.camera.traslate(-this.mouseDX*this.camera_PXLS_TRASLPLANE,this.mouseDY*this.camera_PXLS_TRASLPLANE,0);
 
             }
         })
@@ -439,11 +445,44 @@ class mrslScene{
 
         //keyboard events
         document.addEventListener('keydown', (e)=>{
-            if(this.canvasMouseFocused) {
-                if(e.key == "w")      this.camera.traslateStep(0,this.camera_PXLS_TRASLPLANE*10);
-                else if(e.key == "s") this.camera.traslateStep(0,-this.camera_PXLS_TRASLPLANE*10); 
-                else if(e.key == "a") this.camera.traslateStep(-this.camera_PXLS_TRASLPLANE*10,0); 
-                else if(e.key == "d") this.camera.traslateStep(this.camera_PXLS_TRASLPLANE*10,0);
+            //when a key changes state to pressed, create a time interval which fires traslateStep
+            if(this.canvasMouseFocused && !this.keysPressed[e.key]){
+                this.keysPressed[e.key] = true;
+
+                if(e.key == "w")
+                this.keysTimeintervals.forward = setInterval(()=>{this.camera.traslateStep(0,0,this.camera_PXLS_TRASLPLANE*20);
+                },this.camera_KEYTRASLATE_FIREPERIOD);
+                else if(e.key == "s")
+                this.keysTimeintervals.forward = setInterval(()=>{this.camera.traslateStep(0,0,-this.camera_PXLS_TRASLPLANE*20);
+                },this.camera_KEYTRASLATE_FIREPERIOD);
+                else if(e.key == "a")
+                this.keysTimeintervals.sideways = setInterval(()=>{this.camera.traslateStep(-this.camera_PXLS_TRASLPLANE*20,0,0);
+                },this.camera_KEYTRASLATE_FIREPERIOD);
+                else if(e.key == "d")
+                this.keysTimeintervals.sideways = setInterval(()=>{this.camera.traslateStep(this.camera_PXLS_TRASLPLANE*20,0,0);
+                },this.camera_KEYTRASLATE_FIREPERIOD);
+                else if(e.key == "q")
+                this.keysTimeintervals.vertical = setInterval(()=>{this.camera.traslateStep(0,-this.camera_PXLS_TRASLPLANE*20,0);
+                },this.camera_KEYTRASLATE_FIREPERIOD);
+                else if(e.key == "e")
+                this.keysTimeintervals.vertical = setInterval(()=>{this.camera.traslateStep(0,this.camera_PXLS_TRASLPLANE*20,0);
+                },this.camera_KEYTRASLATE_FIREPERIOD);
+            }
+        });
+        document.addEventListener('keyup', (e)=>{
+            //when key is released, change state to not pressed and clear it's time interval
+            if(this.canvasMouseFocused){
+                this.keysPressed[e.key] = false;
+
+                if(e.key == "w" || e.key == "s"){
+                    clearInterval(this.keysTimeintervals.forward);
+                }
+                else if(e.key == "a" || e.key == "d"){
+                    clearInterval(this.keysTimeintervals.sideways);
+                }
+                else if(e.key == "q" || e.key == "e"){
+                    clearInterval(this.keysTimeintervals.vertical);
+                }
             }
         });
     }
