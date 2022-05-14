@@ -37,7 +37,7 @@ Objects that configure an *mrslShader* instance. Many are preconfigured, but it 
 
 ### Standard shaders
 * MRSL_SHADER_XYZRGB_UNIMAT :   3D position and RGB color per vertex, screen matrix uniform
-* MRSL_SHADER_XYZRGB_UNIMAT :   3D position per vertex, RGB color uniform and screen matrix uniform
+* MRSL_SHADER_XYZ_UNIRGB_UNIMAT :   3D position per vertex, RGB color uniform and screen matrix uniform
 
 
 
@@ -65,8 +65,7 @@ This class wraps around an MRSL shader object the *execute* method, to easily ta
     execute(params)
 * enable vertex attributes defined in the shader object
 * use shader program
-* uniforms defined in the shader object get set (in order) to the objects in the `params` argument (ex. vectors, matrices)
-
+* the objects in the `params` argument are used to set (in order) the uniforms defined in the shader object (ex. colours, matrices)
 
 
 
@@ -79,13 +78,15 @@ Objects that configure an *mrslObject* instance. Many are preconfigured, but it 
 * `name` ( string ): name of the object type (ex. TRIANGLE, PRISM)
 * `mesh` ( function ): takes (in order) vertices array, indices array and a params array. Saves to the arrays the mesh data generated from the parameters for the specific object type
 * `shader` ( Object ): MRSL shader object to use
-* `shaderExecute` ( function ): takes (in order) an *mrslShader* instance, a params array and a matrix. Calls the instance's execute method with it's (shader type specific) uniform parameters (ex. color, matrix)
+* `shaderExecute` ( function ): takes (in order) an *mrslShader* instance, a params array and a matrix. Calls the instance's execute method with it's (shader type specific) uniform parameters (ex. colours, matrices).<br/>
+*mrslObject* instances call this function with their *mrslShader*, params and screenMatrix; between gl buffers allocation and the gl draw call.
 * `draw` ( function ): takes a WebGL context and calls on it the (object type specific) gl draw method (ex. gl.drawElements)
 
 
 ### Standard objects
-* MRSL_OBJECT_TRIANGLE :   3 points and an RGB color
-* MRSL_OBJECT_PRISM :   3 vectors (prism segments from origin) and an RGB color
+* MRSL_OBJECT_TRIANGLE :   3 vertex points, RGB color
+* MRSL_OBJECT_PLANE :   normal vector (unit length), plane point, RGB color
+* MRSL_OBJECT_PRISM :   3 vectors (the prism's sides, starting in the origin), RGB color
 
 
 
