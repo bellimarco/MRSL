@@ -76,15 +76,8 @@ const MRSL_OBJECT_PRISM = {
                 x+params[3][0]+params[2][0], y+params[3][1]+params[2][1], z+params[3][2]+params[2][2],
                 x+params[1][0]+params[3][0], y+params[1][1]+params[3][1], z+params[1][2]+params[3][2],
                 x+params[1][0]+params[2][0]+params[3][0], y+params[1][1]+params[2][1]+params[3][1], z+params[1][2]+params[2][2]+params[3][2]);
-            //12 triangles, given by 36 indices
-            indices.push(
-                0,1,3, 1,3,6,
-                0,2,3, 2,3,5,
-                1,4,6, 4,6,7,
-                4,2,7, 2,7,5,
-                3,6,5, 5,6,7,
-                0,1,2, 1,2,4
-            );
+            //12 triangle strip, given by 3+11 indices
+            indices.push(2,4,0,1,6,4,7,2,5,0,3,6,5,7);
         }
         else console.error("MRSL_OBJECT_PRISM/mesh/ wrong parameter number");
     },
@@ -96,7 +89,7 @@ const MRSL_OBJECT_PRISM = {
     },
     draw: (gl)=>{
         //draw the 12 triangles
-        gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+        gl.drawElements(gl.TRIANGLE_STRIP, 14, gl.UNSIGNED_SHORT, 0);
     }
 };
 

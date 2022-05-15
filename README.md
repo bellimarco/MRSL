@@ -86,7 +86,8 @@ Objects that configure an *mrslObject* instance. Many are preconfigured, but it 
 ### Standard objects
 * MRSL_OBJECT_TRIANGLE :   3 vertex points, RGB color
 * MRSL_OBJECT_PLANE :   normal vector (unit length), plane point, RGB color
-* MRSL_OBJECT_PRISM :   3 vectors (the prism's sides, starting in the origin), RGB color
+* MRSL_OBJECT_PRISM :   origin point, 3 vectors (the prism's sides, starting in the origin), RGB color
+* MRSL_OBJECT_COORDSFRAME :   origin point
 
 
 
