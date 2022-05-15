@@ -18,7 +18,7 @@ const MRSL_OBJECT_TRIANGLE = {
         //uniforms: rgb color, matrix
         shader.execute([objParams[3], objMatrix]);
     },
-    draw: (gl)=>{
+    draw: (gl,vertices,indices)=>{
         //draw the 3 vertices
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
@@ -55,7 +55,7 @@ const MRSL_OBJECT_PLANE = {
         //uniforms: rgb color, matrix
         shader.execute([objParams[2], objMatrix]);
     },
-    draw: (gl)=>{
+    draw: (gl,vertices,indices)=>{
         //draw the 4 triangles
         gl.drawElements(gl.TRIANGLES, 12, gl.UNSIGNED_SHORT, 0);
     }
@@ -66,7 +66,7 @@ const MRSL_OBJECT_PRISM = {
     mesh: (vertices,indices,params)=>{
         //params: origin point, side1 vec, side2 vec, side3 vec, rgb color
         if(params.length==5){
-            var x = params[0][0]; var y = params[0][1]; var z = params[0][2];
+            let x = params[0][0]; let y = params[0][1]; let z = params[0][2];
             //8 vertices given by a all combinations of the 3 vectors
             vertices.push(x,y,z,
                 x+params[1][0], y+params[1][1], z+params[1][2],
@@ -87,9 +87,102 @@ const MRSL_OBJECT_PRISM = {
         //uniforms: rgb color, matrix
         shader.execute([objParams[4], objMatrix]);
     },
-    draw: (gl)=>{
+    draw: (gl,vertices,indices)=>{
         //draw the 12 triangles
         gl.drawElements(gl.TRIANGLE_STRIP, 14, gl.UNSIGNED_SHORT, 0);
+    }
+};
+
+const MRSL_OBJECT_CYLINDER = {
+    name: "CYLINDER",
+    mesh: (vertices,indices,params)=>{
+        //params: start point, end point, radius, rgb color, circle resolution
+        if(params.length==5){
+            let x = params[0][0]; let y = params[0][1]; let z = params[0][2];
+            let x_ = params[1][0]; let y_ = params[1][1]; let z_ = params[1][2];
+            
+            let r = params[2];
+            if(r<1e-8){
+                //if zero radius, draw a line
+                vertices.push(...params[0],...params[1]);
+            }else{
+                let dir = [x_-x, y_-y, z_-z];
+                //create vector on circle radius r normal to the line direction
+                let normal = [-dir[1],dir[0],dir[2]];
+                if(Math.abs(normal[0])<1e-8 && Math.abs(normal[1])<1e-8){
+                    normal = [dir[0],-dir[2],dir[1]];
+                    if(Math.abs(normal[1])<1e-8){ console.error("MRSL_OBJECT_CYLINDER/mesh/ can't create non-zero normal vector"); return; }
+                }
+                vec3.cross(normal,normal,dir);
+                vec3.scale(normal,normal,r/vec3.length(normal));
+                //resolution settings, scales linearly with radius
+                let circlePoints = Math.max(6,Math.floor(24*r*params[4]));
+                let angleStep = Math.PI*2/circlePoints;
+                let rotMat = mat4.create();
+                mat4.fromRotation(rotMat,angleStep,dir);
+                //create circle of points around start point and end point
+                let circleStart = []; let circleEnd = [];
+                for(let i=0; i<circlePoints; i++){
+                    circleStart.push(vec3.add(vec3.create(),params[0],normal));
+                    circleEnd.push(vec3.add(vec3.create(),params[1],normal));
+                    vec3.transformMat4(normal,normal,rotMat);
+                }
+                //add the 2 circles of points
+                circleStart.forEach(e=>vertices.push(...e));
+                circleEnd.forEach(e=>vertices.push(...e));
+                //cover of bottom circle, add alternating between first and last elements
+                let arrayHalf = Math.floor(circlePoints/2);
+                for(let l=0; l<arrayHalf; l++){
+                    indices.push(arrayHalf+l);
+                    indices.push(arrayHalf-l-1);
+                }
+                if(circlePoints%2!=0) indices.push(circlePoints-1);
+                //cover of walls
+                if(circlePoints%2==0){
+                    //the covering finished with first point on circleStart
+                    indices.push(0+circlePoints);
+                    for(let i=1; i<circlePoints; i++){
+                        indices.push(i);
+                        indices.push(i+circlePoints);
+                    }
+                    indices.push(0+circlePoints);
+                    //finished with first point on circleStart
+                }else{
+                    //the covering finished with last point on circleStart
+                    indices.push(circlePoints-1+circlePoints);
+                    for(let i=circlePoints-2; i>=0; i--){
+                        indices.push(i);
+                        indices.push(i+circlePoints);
+                    }
+                    indices.push(circlePoints-1+circlePoints);
+                    //finished with last point on circleEnd
+                }
+                //cover of top circle
+                if(circlePoints%2==0){
+                    for(let l=1; l<arrayHalf; l++){
+                        indices.push(circlePoints-1-l+circlePoints);
+                        indices.push(l+circlePoints);
+                    }
+                }else{
+                    for(let l=1; l<arrayHalf; l++){
+                        indices.push(l+circlePoints);
+                        indices.push(circlePoints-1-l+circlePoints);
+                    }
+                    indices.push(arrayHalf+circlePoints);
+                }
+            }
+        }
+        else console.error("MRSL_OBJECT_CYLINDER/mesh/ wrong parameter number");
+    },
+
+    shader: MRSL_SHADER_XYZ_UNIRGB_UNIMAT,
+    shaderExecute: (shader, objParams, objMatrix)=>{
+        //uniforms: rgb color, matrix
+        shader.execute([objParams[3], objMatrix]);
+    },
+    draw: (gl,vertices,indices)=>{
+        //triangle strip of not fixed length
+        gl.drawElements(gl.TRIANGLE_STRIP, indices.length, gl.UNSIGNED_SHORT, 0);
     }
 };
 
@@ -99,7 +192,7 @@ const MRSL_OBJECT_COORDSFRAME = {
         //params: origin point
         if(params.length==1){
             //6 vertices for the 3 segments, each with a point and a color
-            var x = params[0][0]; var y = params[0][1]; var z = params[0][2];
+            let x = params[0][0]; let y = params[0][1]; let z = params[0][2];
             vertices.push(x,y,z,0.8,0,0, x+1,y,z,0.8,0,0, x,y,z,0,0.8,0, x,y+1,z,0,0.8,0, x,y,z,0,0,0.8, x,y,z+1,0,0,0.8);
         }
         else console.error("MRSL_OBJECT_COORDSFRAME/mesh/ wrong parameter number");
@@ -110,7 +203,7 @@ const MRSL_OBJECT_COORDSFRAME = {
         //uniforms: rgb color, matrix
         shader.execute([objMatrix]);
     },
-    draw: (gl)=>{
+    draw: (gl,vertices,indices)=>{
         //draw the 12 triangles
         gl.drawArrays(gl.LINES, 0, 6);
     }

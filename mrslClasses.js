@@ -162,7 +162,7 @@ class mrslObject{
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), gl.STATIC_DRAW);
 
         this.type.shaderExecute(this.shader, this.params, this.screenMatrix);
-        this.type.draw(gl);
+        this.type.draw(gl,this.vertices,this.indices);
     }
 
 }
