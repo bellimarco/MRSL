@@ -386,7 +386,7 @@ class mrslScene{
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
         let a = performance.now()/500;
-        this.objects[1].move(mat4.fromRotation(new Float32Array(16),a,[1,1,1]));
+        this.objects.find((obj)=>{return obj.type.name=="PRISM";}).move(mat4.fromRotation(new Float32Array(16),a,[1,1,1]));
 
         this.objects.forEach((e)=>{
             e.updateCamera(this.camera.matrix);

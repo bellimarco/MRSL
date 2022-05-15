@@ -64,15 +64,18 @@ const MRSL_OBJECT_PLANE = {
 const MRSL_OBJECT_PRISM = {
     name: "PRISM",
     mesh: (vertices,indices,params)=>{
-        //params: side1 vec, side2 vec, side3 vec, rgb color
-        if(params.length==4){
+        //params: origin point, side1 vec, side2 vec, side3 vec, rgb color
+        if(params.length==5){
+            var x = params[0][0]; var y = params[0][1]; var z = params[0][2];
             //8 vertices given by a all combinations of the 3 vectors
-            vertices.push(0,0,0,
-                ...params[0], ...params[1], ...params[2],
-                params[0][0]+params[1][0], params[0][1]+params[1][1], params[0][2]+params[1][2],
-                params[2][0]+params[1][0], params[2][1]+params[1][1], params[2][2]+params[1][2],
-                params[0][0]+params[2][0], params[0][1]+params[2][1], params[0][2]+params[2][2],
-                params[0][0]+params[1][0]+params[2][0], params[0][1]+params[1][1]+params[2][1], params[0][2]+params[1][2]+params[2][2]);
+            vertices.push(x,y,z,
+                x+params[1][0], y+params[1][1], z+params[1][2],
+                x+params[2][0], y+params[2][1], z+params[2][2],
+                x+params[3][0], y+params[3][1], z+params[3][2],
+                x+params[1][0]+params[2][0], y+params[1][1]+params[2][1], z+params[1][2]+params[2][2],
+                x+params[3][0]+params[2][0], y+params[3][1]+params[2][1], z+params[3][2]+params[2][2],
+                x+params[1][0]+params[3][0], y+params[1][1]+params[3][1], z+params[1][2]+params[3][2],
+                x+params[1][0]+params[2][0]+params[3][0], y+params[1][1]+params[2][1]+params[3][1], z+params[1][2]+params[2][2]+params[3][2]);
             //12 triangles, given by 36 indices
             indices.push(
                 0,1,3, 1,3,6,
@@ -89,10 +92,33 @@ const MRSL_OBJECT_PRISM = {
     shader: MRSL_SHADER_XYZ_UNIRGB_UNIMAT,
     shaderExecute: (shader, objParams, objMatrix)=>{
         //uniforms: rgb color, matrix
-        shader.execute([objParams[3], objMatrix]);
+        shader.execute([objParams[4], objMatrix]);
     },
     draw: (gl)=>{
         //draw the 12 triangles
         gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+    }
+};
+
+const MRSL_OBJECT_COORDSFRAME = {
+    name: "COORDSFRAME",
+    mesh: (vertices,indices,params)=>{
+        //params: origin point
+        if(params.length==1){
+            //6 vertices for the 3 segments, each with a point and a color
+            var x = params[0][0]; var y = params[0][1]; var z = params[0][2];
+            vertices.push(x,y,z,0.8,0,0, x+1,y,z,0.8,0,0, x,y,z,0,0.8,0, x,y+1,z,0,0.8,0, x,y,z,0,0,0.8, x,y,z+1,0,0,0.8);
+        }
+        else console.error("MRSL_OBJECT_COORDSFRAME/mesh/ wrong parameter number");
+    },
+
+    shader: MRSL_SHADER_XYZRGB_UNIMAT,
+    shaderExecute: (shader, objParams, objMatrix)=>{
+        //uniforms: rgb color, matrix
+        shader.execute([objMatrix]);
+    },
+    draw: (gl)=>{
+        //draw the 12 triangles
+        gl.drawArrays(gl.LINES, 0, 6);
     }
 };
