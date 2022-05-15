@@ -4,6 +4,9 @@ const MRSL_OBJECT_NOTDEFINED = {
     name: "NOTDEFINED",
 };
 
+
+
+
 const MRSL_OBJECT_TRIANGLE = {
     name: "TRIANGLE",
     mesh: (vertices,indices,params)=>{
@@ -23,6 +26,9 @@ const MRSL_OBJECT_TRIANGLE = {
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
 };
+
+
+
 
 const MRSL_OBJECT_PLANE = {
     name: "PLANE",
@@ -61,6 +67,30 @@ const MRSL_OBJECT_PLANE = {
     }
 };
 
+
+
+const MRSL_OBJECT_LINE = {
+    name: "LINE",
+    mesh: (vertices,indices,params)=>{
+        //params: start point, end point, rgb color
+        if(params.length==3){
+            vertices.push(...params[0], ...params[1]);
+        }
+        else console.error("MRSL_OBJECT_LINE/mesh/ wrong parameter number");
+    },
+    shader: MRSL_SHADER_XYZ_UNIRGB_UNIMAT,
+    shaderExecute: (shader, objParams, objMatrix)=>{
+        //uniforms: rgb color, matrix
+        shader.execute([objParams[2], objMatrix]);
+    },
+    draw: (gl,vertices,indices)=>{
+        gl.drawArrays(gl.LINES, 0, 2);
+    }
+};
+
+
+
+
 const MRSL_OBJECT_PRISM = {
     name: "PRISM",
     mesh: (vertices,indices,params)=>{
@@ -92,6 +122,9 @@ const MRSL_OBJECT_PRISM = {
         gl.drawElements(gl.TRIANGLE_STRIP, 14, gl.UNSIGNED_SHORT, 0);
     }
 };
+
+
+
 
 const MRSL_OBJECT_CYLINDER = {
     name: "CYLINDER",
@@ -186,6 +219,9 @@ const MRSL_OBJECT_CYLINDER = {
     }
 };
 
+
+
+
 const MRSL_OBJECT_COORDSFRAME = {
     name: "COORDSFRAME",
     mesh: (vertices,indices,params)=>{
@@ -204,7 +240,6 @@ const MRSL_OBJECT_COORDSFRAME = {
         shader.execute([objMatrix]);
     },
     draw: (gl,vertices,indices)=>{
-        //draw the 12 triangles
         gl.drawArrays(gl.LINES, 0, 6);
     }
 };
