@@ -212,4 +212,4 @@ Scene class, manages all the drawing and camera work for a specific WebGL contex
 <br/>
 
 #
-### 21.04.2022 - Antonio Pisanello, Marco Belli, David Ötterli
+### 21.04.2022 - Marco Belli
