@@ -2,14 +2,8 @@
 
 # Mobile Robot Simulation Library -  Documentation
 
-
-
-## Brief Overview
-MRSL is used to easily generate and manage graphics related to a Mobile Robot Simulation application on an html canvas, based on the WebGL framework.
-
-Given a canvas, we can create an *mrslScene*, on which we can start to draw objects. This also enables us to have multiple canvases on our page with each an indipendent *mrslScene*.
-
-Given an *mrslScene*, we can append indipendent objects to it, or alternatively append joint structures, which are also entirely implemented in MRSL.
+MRSL is used to easily generate and manage graphics related to a mobile robot simulation application on an html canvas, based on the WebGL framework.
+Given a canvas, we can create an *mrslScene*, on which we can start to draw objects. It is possible to have multiple canvases on the same page each with an indipendent *mrslScene* object. Given an *mrslScene*, we can append *mrslObject*s to it (joint structures), with various rendering options determined by the coupled *mrslShader* objects.
 
 #
 ## Dependencies
